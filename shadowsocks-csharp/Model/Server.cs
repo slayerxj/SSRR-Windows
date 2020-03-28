@@ -119,6 +119,7 @@ namespace Shadowsocks.Model
         public bool enable;
         public bool udp_over_tcp;
 
+        public int index;
         public int latency;
 
         public static int LATENCY_ERROR = -2;

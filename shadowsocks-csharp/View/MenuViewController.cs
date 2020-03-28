@@ -144,7 +144,7 @@ namespace Shadowsocks.View {
         }
 
         private void timerUpdateLatency_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
-            timerUpdateLatency.Interval = 1000.0 * 60 * 30;
+            timerUpdateLatency.Interval = 1000.0 * 60 * 10;
             timerUpdateLatency.Stop();
             try {
                 Configuration configuration = _controller.GetCurrentConfiguration();
@@ -628,9 +628,38 @@ namespace Shadowsocks.View {
             SortedDictionary<string, MenuItem> group = new SortedDictionary<string, MenuItem>();
             const string def_group = "!(no group)";
             string select_group = "";
+
+            List<Server> servers = new List<Server>();
             for (int i = 0; i < configuration.configs.Count; i++) {
-                string group_name;
                 Server server = configuration.configs[i];
+                server.index = i;
+                servers.Add(server);
+            }
+
+            servers.Sort(delegate(Server x, Server y) {
+                if (x.latency == y.latency) return 0;
+                if (x.latency < 1 && y.latency < 1) {
+                    return (x.latency > y.latency) ? -1 : 1;
+                }
+
+                if (x.latency < 1) {
+                    return 1;
+                }
+
+                if (y.latency < 1) {
+                    return -1;
+                }
+
+                if (x.latency > y.latency) {
+                    return 1;
+                } else {
+                    return -1;
+                }
+            });
+
+            for (int i = 0; i < servers.Count; i++) {
+                string group_name;
+                Server server = servers[i];
                 if (string.IsNullOrEmpty(server.group))
                     group_name = def_group;
                 else
@@ -650,9 +679,9 @@ namespace Shadowsocks.View {
                     latency = "[" + server.latency.ToString() + "ms]";
                 }
                 MenuItem item = new MenuItem(latency + " " + server.FriendlyName());
-                item.Tag = i;
+                item.Tag = server.index;
                 item.Click += AServerItem_Click;
-                if (configuration.index == i) {
+                if (configuration.index == server.index) {
                     item.Checked = true;
                     select_group = group_name;
                 }
